@@ -128,7 +128,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="min-w-[60vw]">
     <div class="flex flex-col justify-center items-center gap-2">
       <button id="loader" type="button">Load FFMPEG</button>
-      <video controls id="vid"></video>
+      <video controls id="vid" class="min-w-[30rem] h-auto"></video>
       <input id="file-input" disabled type="file" accept="video/*" class="p-2" />
       <label id="seek-label-start">Start</label>
       <input type="range" step="1" class="w-full" id="seek-start" disabled />
