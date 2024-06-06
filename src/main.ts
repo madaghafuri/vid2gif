@@ -4,7 +4,6 @@ import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 let ffmpeg: FFmpeg | null = null;
 let tempFile: File;
-let media_duration: number;
 
 const load = async () => {
   const baseUrl = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
@@ -20,7 +19,6 @@ const load = async () => {
         const parsedMinutes = parseInt(minutes) * 60;
         const parsedSeconds = parseInt(seconds);
         const totalDuration = parsedHours + parsedMinutes + parsedSeconds;
-        media_duration = totalDuration;
 
         const seekStart = document.getElementById(
           "seek-start"
@@ -70,19 +68,6 @@ const changeFile = async ({
 
   await ffmpeg.writeFile(name, await fetchFile(files[0]));
   await ffmpeg.exec(["-i", name]);
-  // await ffmpeg.exec([
-  //   "-i",
-  //   name,
-  //   "-ss",
-  //   "0",
-  //   "-to",
-  //   "3",
-  //   "-s",
-  //   "640:480",
-  //   "output.mp4",
-  // ]);
-
-  // const data = await ffmpeg.readFile("output.mp4");
 
   const video = document.getElementById("vid") as HTMLVideoElement;
   const url = URL.createObjectURL(files[0]);
@@ -93,6 +78,13 @@ const changeFile = async ({
   ) as HTMLProgressElement;
   progressBar.value = 0;
   progressBar.innerHTML = "0";
+
+  const downloadContainer = document.getElementById(
+    "download-output"
+  ) as HTMLDivElement;
+  if (downloadContainer.childNodes.length > 0) {
+    downloadContainer.removeChild(downloadContainer.firstChild as ChildNode);
+  }
 };
 
 const generateGif = async () => {
@@ -100,6 +92,8 @@ const generateGif = async () => {
 
   const seekStart = document.getElementById("seek-start") as HTMLInputElement;
   const seekEnd = document.getElementById("seek-end") as HTMLInputElement;
+
+  const [parsedFileName] = tempFile.name.split(".");
 
   await ffmpeg.exec([
     "-i",
@@ -112,10 +106,10 @@ const generateGif = async () => {
     "320:240",
     "-r",
     "24",
-    "output.gif",
+    `${parsedFileName}.gif`,
   ]);
 
-  const data = await ffmpeg.readFile("output.gif");
+  const data = await ffmpeg.readFile(`${parsedFileName}.gif`);
   const url = URL.createObjectURL(
     //@ts-ignore
     new Blob([data.buffer], { type: "image/gif" })
@@ -123,27 +117,27 @@ const generateGif = async () => {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "output.gif";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  a.download = `${parsedFileName}.gif`;
+  a.innerHTML = "Download Here";
+  const outputContainer = document.getElementById("download-output");
+  outputContainer?.appendChild(a);
+  await ffmpeg.deleteFile(`${parsedFileName}.gif`);
 };
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
-  <div class="w-[60vw]">
-    <h1>Vid2GIF</h1>
+  <div class="min-w-[60vw]">
     <div class="flex flex-col justify-center items-center gap-2">
       <button id="loader" type="button">Load FFMPEG</button>
-      <video controls id="vid" class="rounded-md"></video>
+      <video controls id="vid"></video>
       <input id="file-input" disabled type="file" accept="video/*" class="p-2" />
-      <label>Start</label>
-      <input type="range" class="w-full" id="seek-start" disabled />
-      <label>End</label>
-      <input type="range" class="w-full" id="seek-end" disabled />
+      <label id="seek-label-start">Start</label>
+      <input type="range" step="1" class="w-full" id="seek-start" disabled />
+      <label id="seek-label-end">End</label>
+      <input type="range" step="1" class="w-full" id="seek-end" disabled />
       <progress id="progress-bar" max="100" min="0" class="w-full rounded"></progress>
     </div>
-    <p id="progress"></p>
-    <button id="gen-gif">Generate GIF</button
+    <button id="gen-gif" class="mt-2">Generate GIF</button>
+    <div id="download-output" class="mt-3"></div>
   </div>
 `;
 
@@ -151,3 +145,22 @@ document.getElementById("loader")?.addEventListener("click", load);
 //@ts-ignore
 document.getElementById("file-input")?.addEventListener("change", changeFile);
 document.getElementById("gen-gif")?.addEventListener("click", generateGif);
+
+const changeSeekStart = (e: Event) => {
+  const label = document.getElementById("seek-label-start") as HTMLLabelElement;
+  label.innerHTML = (e.target as unknown as { value: string }).value;
+};
+
+const changeSeekEnd = (e: Event) => {
+  const label = document.getElementById("seek-label-end") as HTMLLabelElement;
+  label.innerHTML = (e.target as unknown as { value: string }).value;
+};
+
+(document.getElementById("seek-start") as HTMLInputElement).addEventListener(
+  "input",
+  changeSeekStart
+);
+(document.getElementById("seek-end") as HTMLInputElement).addEventListener(
+  "input",
+  changeSeekEnd
+);
