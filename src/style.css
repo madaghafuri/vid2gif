@@ -28,10 +28,6 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 70vw;
-  min-height: 100vh;
 }
 
 h1 {
@@ -97,4 +93,14 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+progress[value] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+progress::-webkit-progress-bar {
+  background-color: #eee;
+  border-radius: 3px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) inset;
 }
